@@ -1,7 +1,7 @@
 <template>
   <div class="bg-dark text-white font-sans min-vh-100">
     <header class="fixed-top bg-dark text-white py-4 px-3 shadow-lg d-flex justify-content-between align-items-center">
-      <div class="h3 font-weight-bold text-neon-green mb-0 animate-fade-in-down">abdoulhalim-soilihi.com</div>
+      <div class="h3 font-weight-bold text-neon-green mb-0 animate-fade-in-down">abdoulhalim-soilihi</div>
       <nav class="d-flex flex-wrap justify-content-center animate-fade-in-down animation-delay-200">
         <button @click="currentPage = 'home'"
           :class="['nav-link', { 'active': currentPage === 'home' }]">ACCUEIL</button>

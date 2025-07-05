@@ -137,7 +137,7 @@ const SkillsPage = {
   setup() {
     const skillCategories = ref([
       { title: 'Core Java & Frameworks', items: ['Java (8-21) / Spring Boot', 'Spring Framework / Batch / Security', 'Hibernate / JPA', 'APIs REST / SOAP / OpenAPI'] },
-      { title: 'DevOps & Cloud', items: ['Docker / Kubernetes (GKE)', 'CI/CD (GitLab / Jenkins / GitHub)', 'SFTP / SSH', 'AWS (ECS, RDS, S3) / Terraform'] },
+      { title: 'DevOps & Cloud', items: ['Docker / Kubernetes (GKE)', 'CI/CD (GitLab / Jenkins / GitHub)', 'SFTP / SSH'] },
       { title: 'Bases de Données & Messagerie', items: ['PostgreSQL / Oracle / SQL Server', 'MongoDB / Redis', 'Kafka / Conduktor'] },
       { title: 'Tests & Qualité Logicielle', items: ['JUnit / Mockito / DB Unit', 'Sonarqube / TDD', 'Analyse de performance'] },
       { title: 'Frontend (Connaissances)', items: ['Vue.js / Angular JS', 'JSP / JavaScript', 'HTML5 / CSS3 / Bootstrap'] },

@@ -1,0 +1,186 @@
+/* src/assets/main.css */
+
+/* Importez les styles Bootstrap */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+/* Vos styles personnalisés et animations (copiez la section <style scoped> de App.vue ici) */
+/* Variables CSS pour les couleurs */
+:root {
+  --neon-green: #39FF14;
+  --dark-background: #000000;
+  --dark-card: #1a1a1a;
+}
+
+/* Styles généraux */
+.font-sans {
+  font-family: 'Inter', sans-serif; /* Assurez-vous d'importer Inter ou utilisez une police système */
+}
+
+.bg-dark {
+  background-color: var(--dark-background) !important;
+}
+
+.text-neon-green {
+  color: var(--neon-green) !important;
+}
+
+.btn-neon-green {
+  background-color: var(--neon-green) !important;
+  border-color: var(--neon-green) !important;
+}
+
+.btn-neon-green:hover {
+  background-color: rgba(57, 255, 20, 0.8) !important; /* Légèrement plus transparent au survol */
+  border-color: rgba(57, 255, 20, 0.8) !important;
+}
+
+.bg-dark-card {
+  background-color: var(--dark-card) !important;
+}
+
+.border-opacity-25 {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.h-300px { height: 300px; }
+.h-sm-400px {
+  @media (min-width: 576px) {
+    height: 400px;
+  }
+}
+.w-lg-40 {
+  @media (min-width: 992px) {
+    width: 40% !important;
+  }
+}
+.w-lg-400px {
+  @media (min-width: 992px) {
+    width: 400px !important;
+  }
+}
+
+/* Styles spécifiques pour la page d'accueil */
+.developer-badge {
+  font-size: 1.5rem; /* Ajustez si nécessaire */
+  letter-spacing: 0.15em; /* Espacement des lettres */
+}
+@media (min-width: 768px) {
+  .developer-badge {
+    font-size: 2.5rem;
+  }
+}
+@media (min-width: 992px) {
+  .developer-badge {
+    font-size: 3.75rem;
+  }
+}
+
+.hover-border-neon-green:hover {
+  border-color: var(--neon-green) !important;
+}
+
+.group-hover-translate-x-2:hover {
+  transform: translateX(0.5rem);
+}
+
+.transform-translate-y-50 {
+  transform: translateY(-50%);
+}
+
+.translate-x-50 {
+  transform: translateX(50%);
+}
+
+.rotate-90 {
+  transform: rotate(90deg);
+}
+
+.origin-bottom-left {
+  transform-origin: bottom left;
+}
+
+.text-nowrap {
+  white-space: nowrap;
+}
+
+.letter-spacing-1 {
+  letter-spacing: 0.1em;
+}
+
+.resize-vertical {
+  resize: vertical;
+}
+
+/* Styles pour les champs de formulaire personnalisés */
+.form-control.focus-border-neon-green:focus {
+  border-color: var(--neon-green) !important;
+  box-shadow: 0 0 0 0.25rem rgba(57, 255, 20, 0.25) !important; /* Ombre néon */
+}
+
+/* Animations (réutilisées de la version Tailwind) */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-in-left {
+  from { opacity: 0; transform: translateX(-50px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fade-in-right {
+  from { opacity: 0; transform: translateX(50px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in { animation: fade-in 0.8s ease-out forwards; }
+.animate-fade-in-left { animation: fade-in-left 0.8s ease-out forwards; }
+.animate-fade-in-right { animation: fade-in-right 0.8s ease-out forwards; }
+.animate-fade-in-up { animation: fade-in-up 0.8s ease-out forwards; }
+.animate-fade-in-down { animation: fade-in-down 0.8s ease-out forwards; }
+
+.animation-delay-200 { animation-delay: 0.2s; }
+.animation-delay-300 { animation-delay: 0.3s; }
+.animation-delay-400 { animation-delay: 0.4s; }
+.animation-delay-500 { animation-delay: 0.5s; }
+.animation-delay-600 { animation-delay: 0.6s; }
+.animation-delay-900 { animation-delay: 0.9s; }
+
+/* Styles de navigation */
+.nav-link {
+  color: #ccc; /* Gris clair pour les liens inactifs */
+  font-size: 1.125rem; /* text-lg */
+  font-weight: 500; /* font-medium */
+  position: relative;
+  transition: color 0.3s ease-in-out;
+  padding: 0.5rem 1rem; /* Ajustez le padding si nécessaire */
+  text-decoration: none; /* Supprime le soulignement par défaut */
+}
+
+.nav-link:hover {
+  color: var(--neon-green);
+}
+
+.nav-link.active {
+  color: var(--neon-green);
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px; /* Épaisseur du soulignement */
+  background-color: var(--neon-green);
+}

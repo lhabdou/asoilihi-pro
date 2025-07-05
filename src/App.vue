@@ -1,7 +1,7 @@
 <template>
   <div class="bg-dark text-white font-sans min-vh-100">
     <header class="fixed-top bg-dark text-white py-4 px-3 shadow-lg d-flex justify-content-between align-items-center">
-      <div class="h3 font-weight-bold text-neon-green mb-0 animate-fade-in-down">abdoulhalim-soilihi</div>
+      <div class="h3 font-weight-bold text-neon-green mb-0 animate-fade-in-down">A.S.</div>
       <nav class="d-flex flex-wrap justify-content-center animate-fade-in-down animation-delay-200">
         <button @click="currentPage = 'home'"
           :class="['nav-link', { 'active': currentPage === 'home' }]">ACCUEIL</button>
@@ -20,7 +20,7 @@
       </button>
     </header>
 
-    <main class="pt-5">
+    <main class="main-content-area">
       <div v-if="currentPage === 'home'">
         <HomePage :set-current-page="setCurrentPage" />
       </div>
@@ -501,6 +501,20 @@ const ContactPage = {
   width: 100%;
   height: 2px;
   background-color: var(--neon-green);
+}
+.main-content-area {
+  /* Espace pour les grands écrans (tablettes, ordinateurs)
+     7rem est une valeur sûre (environ 112px). */
+  padding-top: 7rem;
+}
+
+@media (max-width: 991.98px) {
+  /* Pour les écrans plus petits où le menu peut prendre plus de place.
+     140px est un bon point de départ. Vous pouvez augmenter ou
+     diminuer cette valeur si nécessaire. */
+  .main-content-area {
+    padding-top: 140px;
+  }
 }
 </style>
 ```

@@ -38,20 +38,6 @@
       </div>
     </main>
 
-    <div v-if="submittedMessages.length > 0" style="display: none;">
-      <h2>Messages Reçus via le Formulaire</h2>
-      <ul>
-        <li v-for="(msg, index) in submittedMessages" :key="index">
-          <p><strong>Date:</strong> {{ msg.timestamp }}</p>
-          <p><strong>Nom:</strong> {{ msg.name }}</p>
-          <p><strong>Email:</strong> {{ msg.email }}</p>
-          <p><strong>Message:</strong> {{ msg.message }}</p>
-          <hr />
-        </li>
-      </ul>
-    </div>
-
-
     <footer class="bg-dark text-secondary text-center py-4 border-top border-secondary border-opacity-25 mt-auto">
       &copy; {{ new Date().getFullYear() }} Abdoulhalim SOILIHI - Freelance Java. Tous droits réservés.
     </footer>
@@ -60,26 +46,14 @@
 
 <script setup>
 import { ref } from 'vue';
+import axios from 'axios';
 
 // État pour gérer la page actuelle
 const currentPage = ref('home');
 
-// NOUVEAU : Liste réactive pour stocker les messages
-const submittedMessages = ref([]);
-
 // Fonction pour changer la page actuelle
 const setCurrentPage = (page) => {
   currentPage.value = page;
-};
-
-// NOUVEAU : Fonction pour ajouter un message à notre liste
-const handleNewMessage = (messageData) => {
-  const messageWithTimestamp = {
-    ...messageData,
-    timestamp: new Date().toISOString() // Ajoute un horodatage
-  };
-  submittedMessages.value.push(messageWithTimestamp);
-  console.log("Liste des messages sauvegardés :", submittedMessages.value);
 };
 
 
@@ -229,25 +203,33 @@ const ContactPage = {
     const message = ref('');
     const status = ref('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => { // Rendre la fonction asynchrone
       e.preventDefault();
+      status.value = 'Envoi en cours...'; // Message d'attente
 
-      // MODIFIÉ : Créer l'objet du message
-      const messageData = {
-        name: name.value,
-        email: email.value,
-        message: message.value
-      };
+      try {
+        // Remplacez 'VOTRE_URL_BACKEND_API' par l'URL de votre endpoint backend
+        // Par exemple: 'https://votre-backend.vercel.app/api/send-email'
+        const URL_BACKEND_API = 'http://localhost:8080/api/send-email'; // Mettez ici l'URL de votre API
+        const response = await axios.post(URL_BACKEND_API, {
+          name: name.value,
+          email: email.value,
+          message: message.value
+        });
 
-      // MODIFIÉ : Émettre l'événement avec les données du formulaire
-      emit('message-submitted', messageData);
-
-      // Le reste de la logique reste pour l'expérience utilisateur
-      status.value = 'Message envoyé avec succès !';
-      name.value = '';
-      email.value = '';
-      message.value = '';
-      setTimeout(() => status.value = '', 5000);
+        if (response.status === 200) { // Ou response.data.success si votre API renvoie un JSON
+          status.value = 'Message envoyé avec succès ! Je vous répondrai bientôt.';
+          name.value = '';
+          email.value = '';
+          message.value = '';
+        } else {
+          status.value = 'Erreur lors de l\'envoi du message. Veuillez réessayer.';
+        }
+      } catch (error) {
+        console.error('Erreur lors de l\'envoi du message:', error);
+        status.value = 'Une erreur inattendue est survenue lors de l\'envoi.';
+      }
+      setTimeout(() => status.value = '', 5000); // Efface le statut après 5 secondes
     };
 
     return { name, email, message, status, handleSubmit };

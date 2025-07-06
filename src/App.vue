@@ -210,7 +210,7 @@ const ContactPage = {
       try {
         // Remplacez 'VOTRE_URL_BACKEND_API' par l'URL de votre endpoint backend
         // Par exemple: 'https://votre-backend.vercel.app/api/send-email'
-        const URL_BACKEND_API = 'http://localhost:8080/api/send-email'; // Mettez ici l'URL de votre API
+        const URL_BACKEND_API = 'https://yammering-saloma-lhabdou-7d769c63.koyeb.app/api/send-email'; // Mettez ici l'URL de votre API
         const response = await axios.post(URL_BACKEND_API, {
           name: name.value,
           email: email.value,

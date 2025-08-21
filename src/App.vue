@@ -1,502 +1,418 @@
 <template>
-  <div class="bg-dark text-white font-sans min-vh-100">
-    <header class="fixed-top bg-dark text-white py-4 px-3 shadow-lg d-flex justify-content-between align-items-center">
-      <div class="h3 font-weight-bold text-neon-green mb-0 animate-fade-in-down">A.S.</div>
-      <nav class="d-flex flex-wrap justify-content-center animate-fade-in-down animation-delay-200">
-        <button @click="currentPage = 'home'"
-          :class="['nav-link', { 'active': currentPage === 'home' }]">ACCUEIL</button>
-        <button @click="currentPage = 'skills'"
-          :class="['nav-link', { 'active': currentPage === 'skills' }]">SERVICES</button>
-        <button @click="currentPage = 'projects'"
-          :class="['nav-link', { 'active': currentPage === 'projects' }]">PROJETS</button>
-        <button @click="currentPage = 'about'" :class="['nav-link', { 'active': currentPage === 'about' }]">À
-          PROPOS</button>
-        <button @click="currentPage = 'contact'"
-          :class="['nav-link', { 'active': currentPage === 'contact' }]">CONTACT</button>
-      </nav>
-      <button @click="currentPage = 'contact'"
-        class="btn btn-neon-green text-dark font-weight-bold py-2 px-4 rounded-pill shadow-sm animate-fade-in-down animation-delay-400 d-none d-md-block">
-        Discutons
-      </button>
+  <div class="app-root font-sans" :data-theme="theme">
+    <header ref="headerEl" :class="['site-header fixed-top w-100 py-3 py-lg-3', { scrolled: isScrolled }]">
+      <div class="container-fluid px-3 px-lg-4 d-flex align-items-center justify-content-between">
+        <div class="brand-mark h3 mb-0 d-flex align-items-center will-reveal reveal-left">
+          <span>A.</span>&nbsp;<span>S.</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button class="theme-toggle me-2" @click="toggleTheme" :aria-label="'Basculer en thème ' + (theme==='dark' ? 'clair' : 'sombre')">
+            <i :class="theme==='dark' ? 'bi bi-sun' : 'bi bi-moon-stars'" />
+          </button>
+          <button class="nav-toggle d-lg-none" :class="{ open: navOpen }" @click="navOpen = !navOpen" aria-label="Menu principal">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+        <div class="nav-wrapper d-lg-flex align-items-center" :class="{ open: navOpen }">
+          <nav class="nav-primary mx-lg-3 will-reveal reveal-right">
+            <button v-for="item in navItems" :key="item.key" @click="go(item.key)" :class="{ active: currentPage===item.key }" :aria-current="currentPage===item.key ? 'page' : null">{{ item.label }}</button>
+          </nav>
+          <div class="d-flex align-items-center gap-2 ms-lg-3 mt-3 mt-lg-0 will-reveal reveal-scale">
+            <button class="btn btn-outline-accent d-none d-md-inline-flex px-3" @click="go('projects')">Projets</button>
+            <button class="btn btn-neon-green rounded-pill px-4 py-2" @click="go('contact')">Discutons</button>
+          </div>
+        </div>
+      </div>
     </header>
 
     <main class="main-content-area">
-      <div v-if="currentPage === 'home'">
-        <HomePage :set-current-page="setCurrentPage" />
-      </div>
-      <div v-else-if="currentPage === 'skills'">
-        <SkillsPage />
-      </div>
-      <div v-else-if="currentPage === 'projects'">
-        <ProjectsPage />
-      </div>
-      <div v-else-if="currentPage === 'about'">
-        <AboutMePage />
-      </div>
-      <div v-else-if="currentPage === 'contact'">
-        <ContactPage @message-submitted="handleNewMessage" />
-      </div>
+      <transition name="view-transition" mode="out-in">
+        <component :is="activeComponent" :key="currentPage" :set-current-page="setCurrentPage" @message-submitted="handleNewMessage" />
+      </transition>
     </main>
 
-    <footer class="bg-dark text-secondary text-center py-4 border-top border-secondary border-opacity-25 mt-auto">
-      &copy; {{ new Date().getFullYear() }} Abdoulhalim SOILIHI - Freelance Java. Tous droits réservés.
+    <footer class="site-footer mt-auto will-reveal">
+      <div class="footer-inner container text-center">
+        <div class="d-flex flex-column flex-md-row w-100 justify-content-between align-items-center gap-3">
+          <p class="mb-0 small text-uppercase letter-spacing-1 muted">&copy; {{ new Date().getFullYear() }} Abdoulhalim SOILIHI • Freelance Java / Spring</p>
+          <VisitCounter />
+          <div class="socials">
+            <a href="mailto:soilihi.abdoulhalim@outlook.fr" aria-label="Email"><i class="bi bi-envelope"></i></a>
+            <a href="https://www.linkedin.com/in/abdoulhalim-soilihi-b749779b" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+      </div>
     </footer>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import axios from 'axios';
+import VisitCounter from './components/VisitCounter.vue';
+import profilePic from './assets/profil_pic.jpeg';
 
-// État pour gérer la page actuelle
 const currentPage = ref('home');
+const navOpen = ref(false);
+const isScrolled = ref(false);
+const theme = ref(localStorage.getItem('theme-mode') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
 
-// Fonction pour changer la page actuelle
-const setCurrentPage = (page) => {
-  currentPage.value = page;
+const navItems = [
+  { key: 'home', label: 'Accueil' },
+  { key: 'skills', label: 'Services' },
+  { key: 'projects', label: 'Projets' },
+  { key: 'about', label: 'À propos' },
+  { key: 'contact', label: 'Contact' }
+];
+
+const setCurrentPage = (page) => { currentPage.value = page; };
+const go = (page) => { currentPage.value = page; navOpen.value = false; window.scrollTo({ top:0, behavior:'smooth'}); };
+
+const handleScroll = () => { isScrolled.value = window.scrollY > 8; };
+window.addEventListener('scroll', handleScroll, { passive: true });
+handleScroll();
+
+const toggleTheme = () => {
+  theme.value = theme.value === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('theme-mode', theme.value);
+  document.documentElement.setAttribute('data-theme', theme.value);
 };
-
+document.documentElement.setAttribute('data-theme', theme.value);
 
 // --- Composants de Page ---
-
 const HomePage = {
   props: ['setCurrentPage'],
+  setup(props){
+    const goContact = () => props.setCurrentPage && props.setCurrentPage('contact');
+    const goProjects = () => props.setCurrentPage && props.setCurrentPage('projects');
+    return { goContact, goProjects, profilePic };
+  },
   template: `
-    <div class="d-flex flex-column flex-lg-row min-vh-100 bg-dark text-white py-5 px-3 px-lg-5 position-relative">
-      <div class="flex-grow-1 d-flex flex-column justify-content-center align-items-start z-1 py-5 py-lg-0">
-        <h2 class="display-3 display-lg-1 font-weight-bolder mb-4 animate-fade-in-left">Abdoulhalim SOILIHI</h2>
-        <div class="position-relative d-inline-block mb-4 animate-fade-in-left animation-delay-300">
-          <span class="developer-badge text-neon-green text-uppercase font-weight-bold border border-neon-green px-4 py-2 d-inline-block">DEVELOPPEUR JAVA/SPRING</span>
+    <section class="container hero">
+      <div class="d-flex flex-column justify-content-center" style="z-index:2;">
+        <h1 class="hero-title anim-soft anim-d1">Développeur <span class="accent-text">Java / Spring</span> Freelance</h1>
+        <p class="hero-sub anim-soft anim-d2">Je conçois des backends robustes, scalables et maintenables (Java 8→21, Spring Boot, microservices, Kafka, CI/CD, Cloud). Mon objectif: accélérer vos produits tout en garantissant qualité et fiabilité.</p>
+        <div class="d-flex flex-wrap gap-2 mb-3 anim-soft anim-d3">
+          <button class="btn btn-neon-green rounded-pill px-4 py-2 me-2 mb-2" @click="goContact">Me contacter</button>
+          <button class="btn btn-outline-accent rounded-pill px-4 py-2 mb-2" @click="goProjects">Voir projets</button>
         </div>
-        <button @click="setCurrentPage('contact')" class="btn btn-link text-white text-lg border-bottom border-transparent hover-border-neon-green transition-all duration-300 d-flex align-items-center group mb-5 animate-fade-in-left animation-delay-600">
-          Contactez-moi <span class="ms-2 group-hover-translate-x-2 transition-transform duration-300">→</span>
-        </button>
-        <div class="row w-100 text-center animate-fade-in-up animation-delay-900">
-          <div class="col-12 col-sm-4 mb-4 mb-sm-0"><p class="h1 font-weight-bold text-neon-green">9+</p><p class="text-secondary text-lg">Ans d'expérience</p></div>
-          <div class="col-12 col-sm-4 mb-4 mb-sm-0"><p class="h1 font-weight-bold text-neon-green">8+</p><p class="text-secondary text-lg">Projets réussis</p></div>
-          <div class="col-12 col-sm-4"><p class="h1 font-weight-bold text-neon-green">100%</p><p class="text-secondary text-lg">Satisfaction client</p></div>
-        </div>
-      </div>
-      <div class="position-relative w-100 w-lg-40 d-flex align-items-center justify-content-center justify-content-lg-end z-1 mt-5 mt-lg-0 animate-fade-in-right">
-        <div class="position-relative w-100 h-300px h-sm-400px h-lg-100 w-lg-400px bg-neon-green d-flex align-items-end justify-content-center rounded shadow-lg overflow-hidden">
-          <div class="position-absolute inset-0 bg-secondary bg-cover bg-center rounded" style="background-image: url('https://via.placeholder.com/600x800?text=Abdoulhalim+SOILIHI');"></div>
-          <div class="position-absolute top-50 end-0 transform-translate-y-50 translate-x-50 rotate-90 origin-bottom-left text-dark text-2xl font-weight-bold text-nowrap d-none d-lg-block">MON EXPERTISE</div>
+        <div class="stats-grid anim-soft anim-d4">
+          <div class="stat-item anim-soft anim-d2"><h3>9+</h3><p>Années</p></div>
+          <div class="stat-item anim-soft anim-d3"><h3>8+</h3><p>Projets clés</p></div>
+          <div class="stat-item anim-soft anim-d4"><h3>100%</h3><p>Satisfaction</p></div>
         </div>
       </div>
-    </div>
-  `,
+      <div class="position-relative d-flex align-items-center justify-content-center anim-soft anim-d3">
+        <div class="glass-card p-0 overflow-hidden profile-frame" style="max-width:320px;aspect-ratio:3/4;">
+          <img :src="profilePic" alt="Photo profil" class="w-100 h-100" style="object-fit:cover;" />
+        </div>
+      </div>
+    </section>
+  `
 };
 
 const SkillsPage = {
+  setup(){
+    const skillCategories = ref([
+      { title: 'Core Java & Frameworks', items: ['Java (8-21)', 'Spring Boot / Framework', 'Hibernate · JPA', 'APIs REST / SOAP / OpenAPI'] },
+      { title: 'DevOps & Cloud', items: ['Docker', 'Kubernetes (GKE)', 'CI/CD GitLab · Jenkins · GitHub', 'Observabilité / Monitoring'] },
+      { title: 'Datastores & Messaging', items: ['PostgreSQL · Oracle', 'MongoDB · Redis', 'Kafka (Conduktor)', 'Optimisation requêtes'] },
+      { title: 'Qualité & Tests', items: ['JUnit · Mockito', 'TDD / Clean Code', 'SonarQube', 'Perf & Profiling'] },
+      { title: 'Frontend (Notions)', items: ['Vue.js', 'AngularJS', 'JavaScript ES', 'HTML5 · CSS3 · Bootstrap'] },
+      { title: 'Outils & Méthodo', items: ['IntelliJ · Eclipse', 'Git / GitHub / GitLab / SVN', 'Jira · Confluence', 'Agile Scrum / Kanban'] }
+    ]);
+    return { skillCategories };
+  },
   template: `
-    <div class="min-vh-100 bg-dark text-white py-5 px-3 px-lg-5">
-      <h2 class="display-4 font-weight-bolder text-neon-green mb-5 text-center animate-fade-in">Mes Compétences Techniques</h2>
-      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        <div v-for="(skillCategory, index) in skillCategories" :key="index" class="col">
-          <div class="card bg-dark-card border border-secondary border-opacity-25 h-100 shadow-sm hover-border-neon-green transition-all duration-300 animate-fade-in-up" :style="{ animationDelay: index * 100 + 'ms' }">
-            <div class="card-body">
-              <h3 class="card-title h4 font-weight-bold text-neon-green mb-4">{{ skillCategory.title }}</h3>
-              <ul class="list-unstyled text-secondary space-y-2 text-lg">
-                <li v-for="(item, i) in skillCategory.items" :key="i" class="d-flex align-items-center">
-                    <svg class="me-2 text-neon-green" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10.97 4.97a.75.75 0 0 1 1.071 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.235.235 0 0 1 .02-.022z"/></svg>
-                    {{ item }}
-                </li>
+    <section class="section-skills py-5">
+      <div class="container">
+        <h2 class="section-title text-center anim-soft anim-d1">Compétences</h2>
+        <div class="row g-4 anim-soft anim-d2">
+          <div v-for="(cat,i) in skillCategories" :key="i" class="col-12 col-md-6 col-xl-4 anim-soft anim-d3">
+            <div class="glass-card card-surface skill-category h-100">
+              <h3>{{ cat.title }}</h3>
+              <ul class="skill-list">
+                <li v-for="(item,j) in cat.items" :key="j"><span class="skill-bullet"></span><span>{{ item }}</span></li>
               </ul>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  `,
-  setup() {
-    const skillCategories = ref([
-      { title: 'Core Java & Frameworks', items: ['Java (8-21) / Spring Boot', 'Spring Framework / Batch / Security', 'Hibernate / JPA', 'APIs REST / SOAP / OpenAPI'] },
-      { title: 'DevOps & Cloud', items: ['Docker / Kubernetes (GKE)', 'CI/CD (GitLab / Jenkins / GitHub)', 'SFTP / SSH'] },
-      { title: 'Bases de Données & Messagerie', items: ['PostgreSQL / Oracle / SQL Server', 'MongoDB / Redis', 'Kafka / Conduktor'] },
-      { title: 'Tests & Qualité Logicielle', items: ['JUnit / Mockito / DB Unit', 'Sonarqube / TDD', 'Analyse de performance'] },
-      { title: 'Frontend (Connaissances)', items: ['Vue.js / Angular JS', 'JSP / JavaScript', 'HTML5 / CSS3 / Bootstrap'] },
-      { title: 'Outils & Méthodologies', items: ['IntelliJ IDEA / Eclipse', 'Jira / Confluence / SharePoint', 'Git / GitHub / GitLab / SVN', 'Data Dog / MobaXterm / SoapUI / FileZilla', 'Agile (Scrum / Kanban)'] },
-    ]);
-    return { skillCategories };
-  }
+    </section>
+  `
 };
 
 const ProjectsPage = {
+  setup(){
+    const projects = ref([
+      {
+        title: 'Gestion des Commandes & Logistique (Decathlon)',
+        client: 'Decathlon',
+        period: 'Nov 2023 - En cours',
+        tags:['Java 21','Spring Boot','Kafka','GKE'],
+        description: 'Développement backend Java (Java 21, Spring Boot, Kafka, GKE) pour un écosystème de trois applications stratégiques (Shipperbox, Relay Point Manager, Trackbox) gérant les commandes et la logistique.',
+        details: 'Contribution à la stabilité, la scalabilité et la performance, en respectant les pratiques DevOps et les normes de sécurité.'
+      },
+      {
+        title: 'Interfaces B2B & écosystème Data/Event Driven (Experis/Adeo)',
+        client: 'Experis/Adeo',
+        period: '9 mois',
+        tags:['Java 17','Event Driven','Docker'],
+        description: 'Développement d\'interfaces entre un backbone transactionnel B2B et un écosystème data/event driven (Java 17, Spring Boot 3).',
+        details: 'Mise en place de services Docker Java, déploiements, gestion de features, revues de code, documentation, tests unitaires (JUnit), création de topics Kafka et suivi du RUN (Data Dog).'
+      },
+      {
+        title: 'Optimisation Cloud & Infrastructure (Sogeti/Leroy Merlin)',
+        client: 'Sogeti/Leroy Merlin',
+        period: '11 mois',
+        tags:['GKE','Monitoring','Vue.js'],
+        description: 'Initialisation de nouveaux composants Java Spring Boot, déploiement sur Google Kubernetes Engine (GKE), maintenance et évolutions.',
+        details: 'Participation aux bascules de nouveaux magasins. Prise en charge de modules Front (Vue.js) et utilisation d\'outils de monitoring (Data Dog).'
+      },
+      {
+        title: 'Développeur Agile / Capgemini - GRDF',
+        client: 'GRDF',
+        period: '2 ans 5 mois',
+        tags:['Java EE','Maintenance','Refactoring'],
+        description: 'Amélioration et maintenance des portails Fournisseurs et Distributeur pour le client GRDF.',
+        details: 'Application permettant le suivi et la facturation de la distribution du GAZ (Backend).'
+      },
+      {
+        title: 'API Bancaire Sécurisée & Gestion de Comptes (BNP Paribas Cardif)',
+        client: 'BNP Paribas Cardif',
+        period: '1 an 10 mois',
+        tags:['OAuth2','Security','Swagger'],
+        description: 'Architecture et implémentation d\'APIs hautement sécurisées pour les virements et la gestion de comptes.',
+        details: 'Mise en place d\'OAuth2, tests rigoureux avec JUnit et Postman, et documentation complète via Swagger. Travail sur la création et la gestion d\'applications de gestion des fonds.'
+      },
+      {
+        title: 'Ingénieur réalisateur - Société générale',
+        client: 'Société générale',
+        period: '7 mois',
+        tags:['Java','PostgreSQL','Maintenance'],
+        description: 'Maintenance et évolution du poste de travail : Outil de la société générale, utilisé par les conseillers du crédit du Nord pour la création des produits bancaires (Comptes, Cartes, etc.).',
+        details: 'Équipe d\'une dizaine de personnes. Maintenance et évolution d\'applications critiques pour les conseillers bancaires.'
+      },
+      {
+        title: 'Ingénieur Réalisateur (Java EE 1.8, Tomcat, PostgreSQL) - Ministère de la transition écologique',
+        client: 'Ministère de la transition écologique',
+        period: '1 an 3 mois',
+        tags:['Java EE','PostgreSQL','Secteur Public'],
+        description: 'Projet du ministère de la transition écologique (IED : Industrial Emissions Directive).',
+        details: 'Outil permettant de constituer et de suivre les dossiers des éleveurs. Développement d\'une application de conformité environnementale.'
+      }
+    ]);
+    return { projects };
+  },
   template: `
-    <div class="min-vh-100 bg-dark text-white py-5 px-3 px-lg-5">
-      <h2 class="display-4 font-weight-bolder text-neon-green mb-5 text-center animate-fade-in">Mes Réalisations Clés</h2>
-      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        <div v-for="(project, index) in projects" :key="index" class="col">
-          <div class="card bg-dark-card border border-secondary border-opacity-25 h-100 shadow-sm hover-border-neon-green transition-all duration-300 animate-fade-in-up" :style="{ animationDelay: index * 100 + 'ms' }">
-            <div class="card-body">
-              <h3 class="card-title h4 font-weight-bold text-neon-green mb-3">{{ project.title }}</h3>
-              <p class="card-text text-secondary text-lg" v-html="project.description"></p>
+    <section class="section-projects py-5">
+      <div class="container">
+        <h2 class="section-title text-center anim-soft anim-d1">Projets</h2>
+        <div class="row g-4 anim-soft anim-d2">
+          <div v-for="(p,i) in projects" :key="i" class="col-12 col-md-6 col-xl-4 anim-soft anim-d3">
+            <div class="glass-card card-surface project-category h-100">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h3 class="mb-0">{{ p.title }}</h3>
+                <span class="project-period text-muted small">{{ p.period }}</span>
+              </div>
+              <p class="project-client small mb-2">{{ p.client }}</p>
+              <p class="project-desc mb-2">{{ p.description }}</p>
+              <p class="project-details mb-3 flex-grow-1">{{ p.details }}</p>
+              <div class="tag-badges mt-auto pt-1">
+                <span v-for="(t,j) in p.tags" :key="j" class="tag" :class="{ 'tag-accent': j===0 }">{{ t }}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  `,
-  setup() {
-    const projects = ref([
-      { title: 'Gestion des Commandes & Logistique (Decathlon)', description: 'Nov 2023 - En cours: Développement backend Java (Java 21, Spring Boot, Kafka, GKE) pour un écosystème de trois applications stratégiques (Shipperbox, Relay Point Manager, Trackbox) gérant les commandes et la logistique. Contribution à la stabilité, la scalabilité et la performance, en respectant les pratiques DevOps et les normes de sécurité.' },
-      { title: 'Interfaces B2B & Écosystème Data/Event Driven (Experis/Adeo)', description: '9 mois: Développement d\'interfaces entre un backbone transactionnel B2B et un écosystème data/event driven (Java 17, Spring Boot 3). Mise en place de services Docker Java, déploiements, gestion de features, revues de code, documentation, tests unitaires (JUnit), création de topics Kafka et suivi du RUN (Data Dog).' },
-      { title: 'Optimisation Cloud & Infrastructure (Sogeti/Leroy Merlin)', description: '11 mois: Initialisation de nouveaux composants Java Spring Boot, déploiement sur Google Kubernetes Engine (GKE), maintenance et évolutions. Participation aux bascules de nouveaux magasins. Prise en charge de modules Front (Vue.js) et utilisation d\'outils de monitoring (Data Dog).' },
-      { title: 'Développeur Agile / Capgemini - GrDF ', description: '2 ans 5 mois: Amélioration et maintenance des portails Fournisseurs et Distributeur pour le client GRDF. Application permettant le suivi et la facturation de la distribution du GAZ (Backend)' },
-      { title: 'API Bancaire Sécurisée & Gestion de Comptes (BNP Paribas Cardif)', description: '1 an 10 mois: Architecture et implémentation d\'APIs hautement sécurisées pour les virements et la gestion de comptes. Mise en place d\'OAuth2, tests rigoureux avec JUnit et Postman, et documentation complète via Swagger. Travail sur la création et la gestion d\'applications de gestion des fonds.' },
-      { title: 'Ingénieur réalisateur - Société générale', description: '7 mois: Maintenance et évolution du poste de travail : Outil de la société générale, utilisé par les conseillers du crédit duMaintenance et évolution du poste de travail : Outil de la société générale, utilisé par les conseillers du crédit du Nord pour la création des produits bancaires (Comptes, Cartes, etc.). Equipe d’une dizaine de personnes.' },
-      { title: 'Ingénieur Réalisateur (Java EE 1.8, Tomcat, PostgreSql) - Ministère de la transition écologique', description: '1 an 3mois: Projet du ministère de la transition écologique (IED : Industrial Emissions Directive), Outil permettant de constituer et de suivre les dossiers des éleveurs. ' },
-      { title: 'Ingénieur réalisateur - Société générale', description: '7 mois: Maintenance et évolution du poste de travail : Outil de la société générale, utilisé par les conseillers du crédit du Nord pour la création des produits bancaires (Comptes, Cartes, etc.). Equipe d’une dizaine de personnes.' },
-    ]);
-    return { projects };
-  }
+    </section>
+  `
 };
 
 const AboutMePage = {
   template: `
-    <div class="min-vh-100 bg-dark text-white py-5 px-3 px-lg-5 d-flex flex-column justify-content-center align-items-center text-center">
-      <h2 class="display-4 font-weight-bolder text-neon-green mb-5 animate-fade-in">À Propos de Moi</h2>
-      <div class="card bg-dark-card border border-secondary border-opacity-25 shadow-lg p-5 rounded animate-fade-in-up" style="max-width: 900px;">
-        <div class="card-body">
-          <p class="card-text text-secondary text-lg mb-4">Abdoulhalim, Développeur Java/Spring Freelance passionné par la création de solutions backend robustes, évolutives et performantes. Fort de plus de 9 ans d'expérience dans l'écosystème Java, je me suis spécialisé dans le développement avec <strong>Spring Boot</strong>, l'architecture <strong>microservices</strong>, l'intégration continue (<strong>CI/CD</strong>) et les pratiques <strong>DevOps</strong>.</p>
-          <p class="card-text text-secondary text-lg mb-4">Mon objectif est d'aider les entreprises à transformer leurs idées en applications concrètes, en apportant une expertise technique solide et une approche axée sur la qualité et l'innovation. J'aime résoudre des problèmes complexes et construire des systèmes fiables qui répondent aux besoins de mes clients.</p>
-          <p class="card-text text-secondary text-lg">Mes valeurs professionnelles fondamentales sont le respect, le partage, un esprit d'équipe solide et la simplification du code, tout en respectant les bonnes pratiques. Je suis constamment à l'affût des nouvelles technologies et des meilleures pratiques pour garantir que les solutions que je livre sont à la pointe de l'industrie.</p>
+    <section class="section-about py-5">
+      <div class="container">
+        <h2 class="section-title text-center anim-soft anim-d1">À propos</h2>
+        <div class="row justify-content-center anim-soft anim-d2 g-4">
+          <div class="col-12 col-lg-10 col-xl-8">
+            <div class="glass-card card-surface about-category">
+              <p class="lead-paragraph mb-3">Je suis <strong>Abdoulhalim</strong>, développeur backend spécialisé Java / Spring, focalisé sur la qualité, la performance et l'évolution maîtrisée des systèmes.</p>
+              <p class="lead-paragraph mb-3">J'aide les équipes à livrer plus rapidement grâce à une architecture claire, des pipelines CI/CD fiables, une observabilité intégrée et une culture de code propre.</p>
+              <p class="lead-paragraph mb-0">Valeurs: simplicité pragmatique, transmission, esprit d'équipe, amélioration continue.</p>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  `,
+    </section>
+  `
 };
 
 const ContactPage = {
-  // MODIFIÉ : Déclaration de l'événement que le composant peut émettre
   emits: ['message-submitted'],
-  template: `
-    <div class="min-vh-100 bg-dark text-white py-5 px-3 px-lg-5 d-flex flex-column justify-content-center align-items-center">
-      <h2 class="display-4 font-weight-bolder text-neon-green mb-5 text-center animate-fade-in">Entrons en Contact</h2>
-      <form @submit.prevent="handleSubmit" class="w-100 card bg-dark-card border border-secondary border-opacity-25 shadow-lg p-5 rounded animate-fade-in-up" style="max-width: 700px;">
-        <div class="mb-4">
-          <label for="name" class="form-label text-secondary h5 font-weight-bold">Votre Nom</label>
-          <input type="text" id="name" v-model="name" class="form-control bg-dark text-white border-secondary border-opacity-25 focus-border-neon-green focus-shadow-neon-green" placeholder="Votre Nom" required />
-        </div>
-        <div class="mb-4">
-          <label for="email" class="form-label text-secondary h5 font-weight-bold">Votre Email</label>
-          <input type="email" id="email" v-model="email" class="form-control bg-dark text-white border-secondary border-opacity-25 focus-border-neon-green focus-shadow-neon-green" placeholder="votre.email@exemple.com" required />
-        </div>
-        <div class="mb-5">
-          <label for="message" class="form-label text-secondary h5 font-weight-bold">Votre Message</label>
-          <textarea id="message" rows="6" v-model="message" class="form-control bg-dark text-white border-secondary border-opacity-25 focus-border-neon-green focus-shadow-neon-green resize-vertical" placeholder="Décrivez votre projet ou votre question..." required></textarea>
-        </div>
-        <button type="submit" class="btn btn-neon-green text-dark font-weight-bold py-3 px-5 rounded shadow-lg w-100 text-xl text-uppercase letter-spacing-1">Envoyer le message</button>
-        <p v-if="status" class="mt-4 text-center text-neon-green h5 animate-fade-in">{{ status }}</p>
-      </form>
-      <div class="mt-5 text-center">
-        <h4 class="text-neon-green mb-3">Mes Coordonnées</h4>
-        <p class="text-secondary text-lg mb-2"><svg class="me-2 text-neon-green" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555zM0 4.697v7.104l5.803-3.558L0 4.697zM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.95-1.143l-6.57-4.027L8 9.586l-1.239-.756zM16 4.697v7.104l-5.803-3.558L16 4.697z"/></svg> Email: <a href="mailto:soilihi.abdoulhalim@outlook.fr" class="text-white hover-text-neon-green text-decoration-none">soilihi.abdoulhalim@outlook.fr</a></p>
-        <p class="text-secondary text-lg"><svg class="me-2 text-neon-green" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0 1.146C0 .513.526 0 1.176 0h13.648c.65 0 1.176.513 1.176 1.146v13.708c0 .633-.526 1.146-1.176 1.146H1.176C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169h2.478v7.225H4.943zm-2.47-7.243c.827 0 1.488-.659 1.488-1.478 0-.818-.66-1.478-1.488-1.478-.827 0-1.488.659-1.488 1.478 0 .818.66 1.478 1.488 1.478zm6.504 3.097V14h2.478v-5.713c0-1.393.73-2.049 1.703-2.049 1.292 0 1.838.924 1.838 2.298V14H16V8.16c0-2.22-.958-3.535-2.928-3.535-1.434 0-2.043.793-2.394 1.246V4.31H9.006z"/></svg> LinkedIn: <a href="https://www.linkedin.com/in/abdoulhalim-soilihi-b749779b" target="_blank" class="text-white hover-text-neon-green text-decoration-none">abdoulhalim-soilihi-b749779b</a></p>
-      </div>
-    </div>
-  `,
-  // MODIFIÉ : On récupère 'emit' depuis le contexte du setup
-  setup(props, { emit }) {
+  setup(_, { emit }) {
     const name = ref('');
     const email = ref('');
     const message = ref('');
     const status = ref('');
-
-    const handleSubmit = async (e) => { // Rendre la fonction asynchrone
+    const sending = ref(false);
+    const handleSubmit = async (e) => {
       e.preventDefault();
-      status.value = 'Envoi en cours...'; // Message d'attente
-
+      if(sending.value) return;
+      sending.value = true;
+      status.value = 'Envoi en cours...';
       try {
-        // Remplacez 'VOTRE_URL_BACKEND_API' par l'URL de votre endpoint backend
-        // Par exemple: 'https://votre-backend.vercel.app/api/send-email'
-        const URL_BACKEND_API = 'https://yammering-saloma-lhabdou-7d769c63.koyeb.app/api/send-email'; // Mettez ici l'URL de votre API
-        const response = await axios.post(URL_BACKEND_API, {
-          name: name.value,
-          email: email.value,
-          message: message.value
-        });
-
-        if (response.status === 200) { // Ou response.data.success si votre API renvoie un JSON
-          status.value = 'Message envoyé avec succès ! Je vous répondrai bientôt.';
-          name.value = '';
-          email.value = '';
-          message.value = '';
+        const URL_BACKEND_API = 'https://yammering-saloma-lhabdou-7d769c63.koyeb.app/api/send-email';
+        const response = await axios.post(URL_BACKEND_API, { name: name.value, email: email.value, message: message.value });
+        if (response.status === 200) {
+          status.value = 'Message envoyé avec succès !';
+          emit('message-submitted', { name: name.value, email: email.value });
+          name.value=''; email.value=''; message.value='';
         } else {
-          status.value = 'Erreur lors de l\'envoi du message. Veuillez réessayer.';
+          status.value = "Échec de l'envoi. Réessayez.";
         }
-      } catch (error) {
-        console.error('Erreur lors de l\'envoi du message:', error);
-        status.value = 'Une erreur inattendue est survenue lors de l\'envoi.';
+      } catch (err) {
+        console.error(err);
+        status.value = "Erreur lors de l'envoi.";
+      } finally {
+        sending.value = false;
+        setTimeout(()=> status.value='', 6000);
       }
-      setTimeout(() => status.value = '', 5000); // Efface le statut après 5 secondes
     };
-
-    return { name, email, message, status, handleSubmit };
-  }
+    return { name, email, message, status, handleSubmit, sending };
+  },
+  template: `
+    <section class="section-contact py-5">
+      <div class="container d-flex flex-column align-items-center">
+        <h2 class="section-title text-center anim-soft anim-d1">Contact</h2>
+        <form @submit.prevent="handleSubmit" class="glass-card w-100 anim-soft anim-d2" style="max-width:700px;">
+          <div class="row g-4 p-4 p-md-5">
+            <div class="col-12 col-md-6">
+              <label for="name" class="form-label">Nom</label>
+              <input id="name" type="text" v-model="name" required class="form-control" placeholder="Votre nom" />
+            </div>
+            <div class="col-12 col-md-6">
+              <label for="email" class="form-label">Email</label>
+              <input id="email" type="email" v-model="email" required class="form-control" placeholder="vous@exemple.com" />
+            </div>
+            <div class="col-12">
+              <label for="message" class="form-label">Message</label>
+              <textarea id="message" rows="6" v-model="message" required class="form-control" placeholder="Décrivez votre besoin..."></textarea>
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-neon-green w-100 py-3" :disabled="sending">{{ sending ? 'Envoi...' : 'Envoyer le message' }}</button>
+            </div>
+            <div class="col-12" v-if="status">
+              <p class="text-center text-neon-green mb-0 small">{{ status }}</p>
+            </div>
+          </div>
+        </form>
+        <div class="mt-4 text-center muted small anim-soft anim-d3">
+          Ou écrivez directement à <a href="mailto:soilihi.abdoulhalim@outlook.fr" class="text-gradient text-decoration-none">soilihi.abdoulhalim@outlook.fr</a>
+        </div>
+      </div>
+    </section>
+  `
 };
+
+const pagesMap = { home: HomePage, skills: SkillsPage, projects: ProjectsPage, about: AboutMePage, contact: ContactPage };
+const activeComponent = computed(() => pagesMap[currentPage.value] || HomePage);
+
+const handleNewMessage = (payload) => { console.log('Nouveau message', payload); };
 </script>
 
 <style scoped>
-/* Les styles restent inchangés */
-:root {
-  --neon-green: #39FF14;
-  --dark-background: #000000;
-  --dark-card: #1a1a1a;
+.letter-spacing-1 { letter-spacing: .12em; }
+.accent-text { color: var(--neon-green); }
+.project-details { color:#d6e1eb; font-size:.9rem; line-height:1.5; }
+
+/* Force tous les fonds de cartes en sombre, peu importe le thème */
+.glass-card {
+  background: rgba(15, 23, 31, 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(64, 224, 208, 0.2) !important;
+  color: #ffffff !important;
 }
 
-.font-sans {
-  font-family: 'Inter', sans-serif;
+.card-surface {
+  background: rgba(15, 23, 31, 0.9) !important;
+  color: #ffffff !important;
 }
 
-.bg-dark {
-  background-color: var(--dark-background) !important;
+/* Force le texte des cartes en clair */
+.glass-card h3,
+.glass-card p,
+.glass-card .project-desc,
+.glass-card .project-details {
+  color: #ffffff !important;
 }
 
-.text-neon-green {
-  color: var(--neon-green) !important;
+.glass-card .project-details {
+  color: #d6e1eb !important;
 }
 
-.btn-neon-green {
-  background-color: var(--neon-green) !important;
-  border-color: var(--neon-green) !important;
+/* Amélioration de la lisibilité des projets - style similaire aux compétences */
+.project-desc {
+  font-size: 0.95rem !important;
+  line-height: 1.6 !important;
+  color: #e2e8f0 !important;
+  margin-bottom: 0.75rem !important;
 }
 
-.btn-neon-green:hover {
-  background-color: rgba(57, 255, 20, 0.8) !important;
-  border-color: rgba(57, 255, 20, 0.8) !important;
+/* Style des compétences pour référence et cohérence */
+.skill-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-.bg-dark-card {
-  background-color: var(--dark-card) !important;
+.skill-list li {
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.border-opacity-25 {
-  border-color: rgba(255, 255, 255, 0.25) !important;
+.skill-bullet {
+  width: 4px;
+  height: 4px;
+  background: var(--neon-green, #40e0d0);
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.h-300px {
-  height: 300px;
-}
-
-@media (min-width: 576px) {
-  .h-sm-400px {
-    height: 400px;
-  }
-}
-
-@media (min-width: 992px) {
-  .w-lg-40 {
-    width: 40% !important;
-  }
-}
-
-@media (min-width: 992px) {
-  .w-lg-400px {
-    width: 400px !important;
-  }
-}
-
-.developer-badge {
-  font-size: 1.5rem;
-  letter-spacing: 0.15em;
-}
-
-@media (min-width: 768px) {
-  .developer-badge {
-    font-size: 2.5rem;
-  }
-}
-
-@media (min-width: 992px) {
-  .developer-badge {
-    font-size: 3.75rem;
-  }
-}
-
-.hover-border-neon-green:hover {
-  border-color: var(--neon-green) !important;
-}
-
-.group-hover-translate-x-2:hover {
-  transform: translateX(0.5rem);
-}
-
-.transform-translate-y-50 {
-  transform: translateY(-50%);
-}
-
-.translate-x-50 {
-  transform: translateX(50%);
-}
-
-.rotate-90 {
-  transform: rotate(90deg);
-}
-
-.origin-bottom-left {
-  transform-origin: bottom left;
-}
-
-.text-nowrap {
+/* Styles pour les nouveaux champs des projets */
+.project-period {
+  font-size: 0.8rem !important;
+  color: var(--neon-green, #40e0d0) !important;
+  font-weight: 500 !important;
+  background: rgba(64, 224, 208, 0.1) !important;
+  padding: 0.2rem 0.5rem !important;
+  border-radius: 12px !important;
   white-space: nowrap;
 }
 
-.letter-spacing-1 {
-  letter-spacing: 0.1em;
+.project-client {
+  font-size: 1.0rem !important;
+  color: var(--neon-green, #40e0d0) !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+  margin-bottom: 0.5rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  background: rgba(64, 224, 208, 0.15) !important;
+  padding: 0.3rem 0.6rem !important;
+  border-radius: 8px !important;
+  display: inline-block !important;
 }
 
-.resize-vertical {
-  resize: vertical;
-}
-
-.form-control.focus-border-neon-green:focus {
-  border-color: var(--neon-green) !important;
-  box-shadow: 0 0 0 0.25rem rgba(57, 255, 20, 0.25) !important;
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fade-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-50px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes fade-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(50px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fade-in-down {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.8s ease-out forwards;
-}
-
-.animate-fade-in-left {
-  animation: fade-in-left 0.8s ease-out forwards;
-}
-
-.animate-fade-in-right {
-  animation: fade-in-right 0.8s ease-out forwards;
-}
-
-.animate-fade-in-up {
-  animation: fade-in-up 0.8s ease-out forwards;
-}
-
-.animate-fade-in-down {
-  animation: fade-in-down 0.8s ease-out forwards;
-}
-
-.animation-delay-200 {
-  animation-delay: 0.2s;
-}
-
-.animation-delay-300 {
-  animation-delay: 0.3s;
-}
-
-.animation-delay-400 {
-  animation-delay: 0.4s;
-}
-
-.animation-delay-500 {
-  animation-delay: 0.5s;
-}
-
-.animation-delay-600 {
-  animation-delay: 0.6s;
-}
-
-.animation-delay-900 {
-  animation-delay: 0.9s;
-}
-
-.nav-link {
-  color: #ccc;
-  font-size: 1.125rem;
-  font-weight: 500;
-  position: relative;
-  transition: color 0.3s ease-in-out;
-  padding: 0.5rem 1rem;
-  text-decoration: none;
-}
-
-.nav-link:hover {
-  color: var(--neon-green);
-}
-
-.nav-link.active {
-  color: var(--neon-green);
-}
-
-.nav-link.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background-color: var(--neon-green);
-}
-.main-content-area {
-  /* Espace pour les grands écrans (tablettes, ordinateurs)
-     7rem est une valeur sûre (environ 112px). */
-  padding-top: 7rem;
-}
-
-@media (max-width: 991.98px) {
-  /* Pour les écrans plus petits où le menu peut prendre plus de place.
-     140px est un bon point de départ. Vous pouvez augmenter ou
-     diminuer cette valeur si nécessaire. */
-  .main-content-area {
-    padding-top: 140px;
-  }
+/* Réduction de la taille des titres de projets */
+.glass-card h3 {
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
 }
 </style>
-```
